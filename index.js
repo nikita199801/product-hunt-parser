@@ -108,7 +108,7 @@ async function getProductInfo(slugs) {
                         }
                     }
                 });
-                const data = res?.data?.data?.post
+                const data = res?.data?.data?.post;
 
                 if (!data) {
                     return;
