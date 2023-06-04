@@ -7,7 +7,7 @@ const { convertArrayToCSV } = require('convert-array-to-csv');
 const HEADER = ['name', 'description', 'url', 'reviewsRating', 'votesCount', 'followersCount', 'pricingType', 'labels', 'createdAt', 'updatedAt'];
 const FILE_NAME = 'data.csv';
 const URL = 'https://www.producthunt.com/';
-const DEFAULT_TIMEOUT = 60000
+const DEFAULT_TIMEOUT = 60000;
 
 const chromiumPath = process.argv[2] || '/opt/homebrew/bin/chromium';
 let notTooOld = true;
@@ -30,24 +30,28 @@ let notTooOld = true;
     })
 
     while (true && notTooOld) {
-
-        await scrollDown(page);
-        await timeout(2000); // wait for dom load
-        
-        const currentHeight = await page.evaluate(() => document.body.scrollHeight);
-        if (currentHeight === previousHeight) {
+        try {
+            await scrollDown(page);
+            await timeout(1000); // wait for dom load
+            
+            const currentHeight = await page.evaluate(() => document.body.scrollHeight);
+            if (currentHeight === previousHeight) {
+                break;
+            }
+    
+            const element = await page.$(`[data-test=homepage-section-${counter}]`);
+            if (element) {
+                const slugs = await getSlugsFromLinks(page, element);
+                const info = await getProductInfo(slugs);
+                await writeInfoToFile(info.filter(Boolean));
+                await page.evaluate(el => el.remove(), element);
+            }
+            
+            counter++;
+        } catch (err) {
+            console.error(err);
             break;
         }
-
-        const element = await page.$(`[data-test=homepage-section-${counter}]`);
-        if (element) {
-            const slugs = await getSlugsFromLinks(page, element);
-            const info = await getProductInfo(slugs);
-            await writeInfoToFile(info.filter(Boolean));
-            await page.evaluate(el => el.remove(), element);
-        }
-        
-        counter++;
     }
 
     browser.close();
